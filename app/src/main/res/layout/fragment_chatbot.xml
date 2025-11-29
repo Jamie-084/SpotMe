@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/chat_root"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <!-- Messages list -->
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/recyclerMessages"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:clipToPadding="false"
+        android:paddingTop="8dp"
+        android:paddingBottom="8dp"
+        app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintBottom_toTopOf="@id/input_container"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent" />
+
+    <!-- Bottom input / actions container -->
+    <LinearLayout
+        android:id="@+id/input_container"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="8dp"
+        android:background="?android:attr/windowBackground"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent">
+
+        <!-- Optional bot-requested choice buttons; hidden by default.
+             Adapter or controller should set visibility to VISIBLE and inflate chips/buttons here
+             when the bot requests a non-text response. -->
+        <com.google.android.material.chip.ChipGroup
+            android:id="@+id/optionButtonsContainer"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:visibility="gone"
+
+            android:paddingBottom="8dp" />
+<!--        android:singleSelection="true"-->
+<!--        android:chipSpacing="8dp"-->
+
+        <!-- Input row: text field + send button -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="48dp"
+            android:orientation="horizontal"
+            android:gravity="center_vertical">
+
+            <EditText
+                android:id="@+id/editMessage"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:hint="Type a message"
+                android:inputType="textCapSentences|textMultiLine"
+                android:imeOptions="actionSend"
+                android:maxLines="4"
+                android:background="@null"
+                android:paddingStart="12dp"
+                android:paddingEnd="12dp" />
+
+            <ImageButton
+                android:id="@+id/buttonSend"
+                android:layout_width="44dp"
+                android:layout_height="44dp"
+                android:contentDescription="Send"
+                android:src="@android:drawable/ic_menu_send"
+                android:scaleType="centerInside"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                app:tint="?android:attr/textColorPrimary" />
+        </LinearLayout>
+    </LinearLayout>
+</androidx.constraintlayout.widget.ConstraintLayout>
