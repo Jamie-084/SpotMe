@@ -52,11 +52,14 @@ dependencies {
     implementation(platform("com.google.firebase:firebase-bom:34.6.0"))
     implementation("com.google.firebase:firebase-analytics")
     implementation("com.google.firebase:firebase-ai")
+    implementation("com.github.PhilJay:MPAndroidChart:v3.0.3")
+
     implementation(libs.androidx.camera.core)
     implementation(libs.androidx.legacy.support.v4)
     implementation(libs.androidx.lifecycle.livedata.ktx)
     implementation(libs.androidx.lifecycle.viewmodel.ktx)
     implementation(libs.androidx.fragment.ktx)
+    implementation(libs.common)
 
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)

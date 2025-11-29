@@ -3,12 +3,66 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     tools:context=".PresageFragment">
 
-    <com.presagetech.smartspectra.SmartSpectraView
-        android:id="@+id/smart_spectra_view"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content" />
+<!--    <com.presagetech.smartspectra.SmartSpectraView-->
+<!--        android:id="@+id/smart_spectra_view"-->
+<!--        android:layout_width="match_parent"-->
+<!--        android:layout_height="wrap_content" />-->
 
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="20dp">
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:background="@android:color/white">
+
+            <com.presagetech.smartspectra.SmartSpectraView
+                android:id="@+id/smart_spectra_view"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                />
+
+            <LinearLayout
+                android:id="@+id/button_container"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:background="@android:color/white">
+            </LinearLayout>
+
+            <LinearLayout
+                android:id="@+id/chart_container"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:background="@android:color/white">
+            </LinearLayout>
+
+            <com.github.mikephil.charting.charts.ScatterChart
+                android:id="@+id/mesh_container"
+                android:layout_width="400dp"
+                android:layout_height="400dp"
+                android:layout_gravity="center"
+                android:visibility="gone"
+                />
+
+            <Button
+                android:id="@+id/demo_btn"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Send demo data" />
+
+            <Button
+                android:id="@+id/save_btn"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Save to file" />
+        </LinearLayout>
+    </ScrollView>
 
 </FrameLayout>

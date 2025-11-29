@@ -2,6 +2,7 @@ package com.example.spotme
 
 import com.example.spotme.R
 import android.os.Bundle
+import android.view.WindowManager
 import androidx.appcompat.app.AppCompatActivity
 import androidx.camera.core.CameraSelector
 import androidx.fragment.app.Fragment
@@ -24,10 +25,15 @@ class MainActivity : AppCompatActivity() {
 
 
 
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
+
         setContentView(R.layout.activity_main)
+
+        val layoutParams = window.attributes
+        layoutParams.screenBrightness = WindowManager.LayoutParams.BRIGHTNESS_OVERRIDE_NONE
 
         supportFragmentManager.beginTransaction().apply {
             add(R.id.frame_fragment_holder, presageFragment, "Presage").hide(presageFragment)
@@ -36,8 +42,18 @@ class MainActivity : AppCompatActivity() {
 
         }.commit()
 
-//        switchFragment(chatbotFragment)
-        switchFragment(presageFragment)
+        switchFragment(chatbotFragment)
+//        switchFragment(presageFragment)
+
+        val chatbot_btn = findViewById<android.widget.Button>(R.id.button1)
+        chatbot_btn.setOnClickListener {
+            switchFragment(chatbotFragment)
+        }
+        val presage_btn = findViewById<android.widget.Button>(R.id.button2)
+        presage_btn.setOnClickListener {
+            switchFragment(presageFragment)
+        }
+
     }
 
     fun switchFragment(targetFragment: Fragment, navItemId: Int? = null) {

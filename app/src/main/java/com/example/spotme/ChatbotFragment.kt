@@ -5,16 +5,24 @@ import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import androidx.fragment.app.activityViewModels
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.spotme.databinding.FragmentChatbotBinding
+
+
 import com.google.android.material.chip.Chip
 import com.google.firebase.Firebase
 import com.google.firebase.ai.Chat
 import com.google.firebase.ai.GenerativeModel
 import com.google.firebase.ai.ai
 import com.google.firebase.ai.type.Content
+import com.google.firebase.ai.type.FunctionCallPart
+import com.google.firebase.ai.type.FunctionDeclaration
 import com.google.firebase.ai.type.GenerativeBackend
+import com.google.firebase.ai.type.PublicPreviewAPI
+import com.google.firebase.ai.type.Schema
+import com.google.firebase.ai.type.Tool
 import com.google.firebase.ai.type.content
 import kotlinx.coroutines.launch
 
@@ -24,12 +32,14 @@ class ChatbotFragment : Fragment() {
 //    companion object {
 //        fun newInstance() = ChatbotFragment()
 //    }
-    //private val viewModel: PresageViewModel by viewModels()
+    private val viewModel: PresageViewModel by activityViewModels()
     private var _binding: FragmentChatbotBinding? = null
     private val binding get() = _binding!!
 
     private lateinit var model : GenerativeModel
     private lateinit var chat : Chat
+    private lateinit var main : MainActivity
+
 
     private lateinit var adapter: ChatbotAdapter
     private val chatHistory = mutableListOf<ChatMessage>()
@@ -38,7 +48,19 @@ class ChatbotFragment : Fragment() {
         You are an assistant that helps user prepare for online job interviews.
         Analyse the current chat history and provide relevant and helpful responses.
         Use a friendly and professional tone.
+        Responses should use simple text formatting, avoid markdown.
+        If user seems ready for interview, call the StartMockInterview tool.
     """.trimIndent() }
+    val toolDeclarations: List<FunctionDeclaration>
+    = listOf(
+        FunctionDeclaration(
+            name = "StartMockInterview",
+            description = "Starts a mock interview session.",
+            parameters = mapOf()
+        )
+    )
+
+    //    val interviewTool = com.google.ai.client.generativeai.common.client.Tool(toolDeclarations)
 
 
 
@@ -47,7 +69,9 @@ class ChatbotFragment : Fragment() {
     ): View {
         _binding = FragmentChatbotBinding.inflate(inflater, container, false)
 
-        adapter = ChatbotAdapter(chatHistory)
+        val chatItems : MutableList<ChatItem> = mutableListOf()
+
+        adapter = ChatbotAdapter(chatItems)
         binding.recyclerMessages.layoutManager = LinearLayoutManager(requireContext())
         binding.recyclerMessages.adapter = adapter
 
@@ -56,17 +80,55 @@ class ChatbotFragment : Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+        main = requireActivity() as MainActivity
+
+        viewModel.metricsDataLD.observe(viewLifecycleOwner) { metrics ->
+
+            val pulses = viewModel.pulsesLD.value
+            if (pulses.isNullOrEmpty() || pulses[0].value == 0) return@observe
+
+            messageToScreenAndHistory(ChatMessage(text = "New metrics data received.", isUser = false))
+            messageToScreenAndHistory(ChatMessage( viewModel.getAverages(20), isUser = false ))
+//            chatHistory.add( ChatMessage( viewModel.getAverages(), isUser = false ) )
+//            sendMessages( "Based on my health metrics during the mock interview, how do you think I did?" )
+
+//            val chartContainer = LinearLayout(requireContext())
+//            PresageGraphs.handleMetricsBuffer(metrics, chartContainer, requireContext())
+//
+//            val views = (0 until chartContainer.childCount).map { chartContainer.getChildAt(it) }
+//            for (graphView in views) {
+//                val params = ViewGroup.LayoutParams(
+//                    ViewGroup.LayoutParams.MATCH_PARENT,
+//                    400
+//                )
+//                graphView.layoutParams = params
+//                (graphView.parent as? ViewGroup)?.removeView(graphView)
+//                adapter.addGraph(graphView)
+//            }
+
+        }
 
         model = Firebase.ai(backend = GenerativeBackend.googleAI())
             .generativeModel(
                 modelName = "gemini-2.5-flash",
-                systemInstruction = instructionText
+                systemInstruction = instructionText,
+                tools = listOf(Tool.functionDeclarations(toolDeclarations))
             )
 
         setupQuestions()
         setupSendButton()
-        addMessage(questions[0])
+        nextQuestion()
+    }
+
+    private fun nextQuestion() : Boolean {
+        if (questions.isEmpty()) {
+            return false
+        }
+        val question = questions[0]
         questions.removeAt(0)
+        messageToScreenAndHistory(question)
+        if (!question.options.isNullOrEmpty()) { showBotOptions(question.options) }
+        return true
     }
 
     private fun setupSendButton() {
@@ -74,19 +136,35 @@ class ChatbotFragment : Fragment() {
             val textInTextbox = binding.editMessage.text.toString().trim()
             if (textInTextbox.isEmpty()) return@setOnClickListener
 
-            // Send user message, clear input box
-            addMessage(ChatMessage(text = textInTextbox, isUser = true))
+            messageToScreenAndHistory(ChatMessage(text = textInTextbox, isUser = true))
             binding.editMessage.setText("")
 
-
-            if (questions.isEmpty()) {
-                sendMessages()
-                return@setOnClickListener
+            if (!nextQuestion()){
+                sendMessages("Evaluate current chat history, provide a small summary, ask me if ready for interview")
             }
-
-            addMessage(questions[0])
-            questions.removeAt(0)
         }
+    }
+
+    private fun showBotOptions(options: List<String>) {
+        binding.optionButtonsContainer.visibility = View.VISIBLE
+        binding.optionButtonsContainer.removeAllViews()
+
+        options.forEach { label ->
+            val chip = Chip(requireContext()).apply {
+                text = label
+                isCheckable = false
+                setOnClickListener {
+                    hideBotOptions()
+                    messageToScreenAndHistory(ChatMessage(text = label, isUser = true))
+
+                    nextQuestion()
+                }
+            }
+            binding.optionButtonsContainer.addView(chip)
+        }
+
+//        binding.editMessage.isEnabled = false
+//        binding.buttonSend.isEnabled = false
     }
 
     private fun setupQuestions() {
@@ -107,6 +185,7 @@ class ChatbotFragment : Fragment() {
             listOf("No, I'm ready", "Yes, tell me more")
         )
 
+
         questionList.forEach { q ->
             questions += ChatMessage(
                 text = q,
@@ -116,7 +195,7 @@ class ChatbotFragment : Fragment() {
         }
     }
 
-    private fun sendMessages () {
+    private fun sendMessages ( prompt : String) {
         lifecycleScope.launch {
 
             val contentList = mutableListOf<Content>()
@@ -124,35 +203,27 @@ class ChatbotFragment : Fragment() {
 
             chat = model.startChat( history = contentList as List<Content> )
 
-            val response = chat.sendMessage("Give me a short summary of my progress so far.")
-            addMessage(ChatMessage(text = response.text ?: "No response", isUser = false))
-        }
-    }
+            val response = chat.sendMessage(prompt)
+            val functionCall: FunctionCallPart? = response.functionCalls.firstOrNull()
+            if (functionCall != null) {
+                val functionName = functionCall.name
 
-    private fun addMessage(message: ChatMessage) {
-        adapter.addMessage(message)
-        binding.recyclerMessages.scrollToPosition(adapter.itemCount - 1)
-    }
-
-    private fun showBotOptions(options: List<String>) {
-        binding.optionButtonsContainer.visibility = View.VISIBLE
-        binding.optionButtonsContainer.removeAllViews()
-
-        options.forEach { label ->
-            val chip = Chip(requireContext()).apply {
-                text = label
-                isCheckable = false
-                setOnClickListener {
-                    hideBotOptions()
-                    addMessage(ChatMessage(text = label, isUser = true))
-                    addMessage(ChatMessage(text = "Received: $label", isUser = false))
+                if (functionName == "StartMockInterview") {
+                   main.switchFragment(main.presageFragment)
+                } else {
+                    println("Unknown function requested: $functionName")
                 }
-            }
-            binding.optionButtonsContainer.addView(chip)
-        }
 
-        binding.editMessage.isEnabled = false
-        binding.buttonSend.isEnabled = false
+            } else {
+                messageToScreenAndHistory(ChatMessage(text = response.text ?: "No response", isUser = false))
+            }
+        }
+    }
+
+    private fun messageToScreenAndHistory(message: ChatMessage) {
+        adapter.addMessage(message)
+        chatHistory.add(message)
+        binding.recyclerMessages.scrollToPosition(adapter.itemCount - 1)
     }
 
     private fun hideBotOptions() {

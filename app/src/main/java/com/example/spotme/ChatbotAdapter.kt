@@ -1,51 +1,67 @@
 package com.example.spotme
 
+import android.content.Context
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.FrameLayout
 import androidx.recyclerview.widget.RecyclerView
 import com.example.spotme.databinding.ItemMessageBotBinding
 import com.example.spotme.databinding.ItemMessageUserBinding
-import com.example.spotme.ChatMessage
+
+
+
 
 class ChatbotAdapter(
-    private val messages: MutableList<ChatMessage>
+    private val items: MutableList<ChatItem>
 ) : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
 
     companion object {
         private const val TYPE_USER = 0
         private const val TYPE_BOT = 1
+        private const val TYPE_GRAPH = 2
+
     }
 
     override fun getItemViewType(position: Int): Int {
-        return if (messages[position].isUser) TYPE_USER else TYPE_BOT
-    }
-
-    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder {
-        return if (viewType == TYPE_USER) {
-            val binding = ItemMessageUserBinding.inflate(
-                LayoutInflater.from(parent.context), parent, false
-            )
-            UserViewHolder(binding)
-        } else {
-            val binding = ItemMessageBotBinding.inflate(
-                LayoutInflater.from(parent.context), parent, false
-            )
-            BotViewHolder(binding)
+        return when (val item = items[position]) {
+            is ChatItem.Message -> if (item.chatMessage.isUser) TYPE_USER else TYPE_BOT
+            is ChatItem.Graph -> TYPE_GRAPH
         }
     }
 
-    override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
-        val msg = messages[position]
-        if (holder is UserViewHolder) holder.bind(msg)
-        if (holder is BotViewHolder) holder.bind(msg)
+    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder {
+        return when (viewType) {
+            TYPE_USER -> UserViewHolder(ItemMessageUserBinding.inflate(LayoutInflater.from(parent.context), parent, false))
+            TYPE_BOT -> BotViewHolder(ItemMessageBotBinding.inflate(LayoutInflater.from(parent.context), parent, false))
+            TYPE_GRAPH -> GraphViewHolder(FrameLayout(parent.context))
+            else -> throw IllegalArgumentException("Invalid view type")
+        }
     }
 
-    override fun getItemCount(): Int = messages.size
+
+    override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
+        when (val item = items[position]) {
+            is ChatItem.Message -> {
+                if (holder is UserViewHolder) holder.bind(item.chatMessage)
+                if (holder is BotViewHolder) holder.bind(item.chatMessage)
+            }
+            is ChatItem.Graph -> {
+                if (holder is GraphViewHolder) holder.bind(item.graphView)
+            }
+        }
+    }
+
+    override fun getItemCount(): Int = items.size
 
     fun addMessage(message: ChatMessage) {
-        messages.add(message)
-        notifyItemInserted(messages.size - 1)
+        items.add(ChatItem.Message(message))
+        notifyItemInserted(items.size - 1)
+    }
+
+    fun addGraph(graphView: android.view.View) {
+        items.add(ChatItem.Graph(graphView))
+        notifyItemInserted(items.size - 1)
     }
 
     class UserViewHolder(private val b: ItemMessageUserBinding)
@@ -65,4 +81,12 @@ class ChatbotAdapter(
             b.textMessageTimeBot.visibility = View.GONE
         }
     }
+
+    class GraphViewHolder(private val frame: FrameLayout) : RecyclerView.ViewHolder(frame) {
+        fun bind(graphView: android.view.View) {
+            frame.removeAllViews()
+            frame.addView(graphView)
+        }
+    }
+
 }
