@@ -12,6 +12,8 @@ android {
         viewBinding = true
     }
 
+    val presageApiKey = (project.findProperty("PRESAGE_API_KEY") as? String) ?: ""
+
     defaultConfig {
         applicationId = "com.example.spotme"
         minSdk = 26
@@ -20,6 +22,8 @@ android {
         versionName = "1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+
+        buildConfigField("String", "PRESAGE_API_KEY", "\"${presageApiKey}\"")
     }
 
     buildTypes {
