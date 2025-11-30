@@ -10,6 +10,7 @@ android {
 
     buildFeatures {
         viewBinding = true
+        buildConfig = true
     }
 
     val presageApiKey = (project.findProperty("PRESAGE_API_KEY") as? String) ?: ""

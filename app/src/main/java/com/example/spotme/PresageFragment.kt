@@ -35,7 +35,6 @@ import com.github.mikephil.charting.data.LineDataSet
 import com.github.mikephil.charting.data.ScatterData
 import com.github.mikephil.charting.data.ScatterDataSet
 import com.google.android.material.button.MaterialButton
-import com.google.firebase.BuildConfig
 import java.io.File
 import java.util.Locale
 
@@ -67,7 +66,7 @@ class PresageFragment : Fragment() {
     private val smartSpectraSdk = SmartSpectraSdk.getInstance().apply {
 //        setApiKey(R.string.PRESAGE_API_KEY.toString())
 //        setApiKey("")
-        setApiKey(BuildConfig.PRESAGE_API_KEY)
+        setApiKey("PYy29upqBq8iks2pf67TQ1b4LQmhcQq71s0slv11")
         setMeasurementDuration(measurementDuration)
         setShowFps(false)
         setRecordingDelay(3)
@@ -243,6 +242,10 @@ class PresageFragment : Fragment() {
             putExtra(RecognizerIntent.EXTRA_PROMPT, "Speak to text")
         }
         speechRecognizerLauncher.launch(intent)
+    }
+
+    fun updateMeasurementDuration(newDuration: Double) {
+        measurementDuration = newDuration
     }
 
 

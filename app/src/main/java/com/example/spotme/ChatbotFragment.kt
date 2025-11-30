@@ -1,10 +1,12 @@
 package com.example.spotme
 
+import android.content.Context
 import android.os.Bundle
 import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.view.inputmethod.InputMethodManager
 import androidx.fragment.app.activityViewModels
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
@@ -23,6 +25,8 @@ import com.google.firebase.ai.type.Schema
 import com.google.firebase.ai.type.Tool
 import com.google.firebase.ai.type.content
 import kotlinx.coroutines.launch
+import kotlinx.serialization.json.doubleOrNull
+import kotlinx.serialization.json.intOrNull
 import kotlinx.serialization.json.jsonPrimitive
 
 
@@ -56,7 +60,7 @@ class ChatbotFragment : Fragment() {
         FunctionDeclaration(
             name = "StartMockInterview",
             description = "Starts a mock interview session.",
-            parameters = mapOf("question" to Schema.string("A single interview question to ask the user."))
+            parameters = mapOf("question" to Schema.string("A single interview question to ask the user. Auto generate this if not already provided"), "length" to Schema.integer("Length of interview in seconds. Default to 20") )
         ),
         FunctionDeclaration(
             name = "SendMessage",
@@ -89,12 +93,15 @@ class ChatbotFragment : Fragment() {
         main = requireActivity() as MainActivity
 
         viewModel.metricsDataLD.observe(viewLifecycleOwner) { metrics ->
+//            questions.clear()
+//            evaluationMessage = ""
             val pulses = viewModel.pulsesLD.value
             if (pulses.isNullOrEmpty() || pulses[0] == 0) return@observe
             messageToScreenAndHistory(ChatMessage( text = "Metric data: \n" + viewModel.getAverages(20), isUser = true ))
             messageToScreenAndHistory(ChatMessage(text = "Interview speech: \n" + viewModel.speechTextLD.value, isUser = true))
-//            evaluationMessage = "Consider the previous chat history and ask me what I would like to do next"
+
             sendMessages( "Give a short summary on how I did, based off my metric data and interview chat. " +
+                    "Relate back to the interview question" +
                     "Ask if I want to start the post interview feedback session" )
         }
 
@@ -132,6 +139,11 @@ class ChatbotFragment : Fragment() {
             val textInTextbox = binding.editMessage.text.toString().trim()
             if (textInTextbox.isEmpty()) return@setOnClickListener
 
+            // hide keyboard
+            val imm = requireContext().getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
+            imm.hideSoftInputFromWindow(binding.editMessage.windowToken, 0)
+            binding.editMessage.clearFocus()
+
             val userMessage = ChatMessage(text = textInTextbox, isUser = true)
             messageToScreenAndHistory(userMessage)
             binding.editMessage.setText("")
@@ -160,7 +172,15 @@ class ChatbotFragment : Fragment() {
                     hideBotOptions()
                     messageToScreenAndHistory(ChatMessage(text = label, isUser = true))
 
-                    nextQuestion()
+                    if (questions.isEmpty()) {
+                        if (evaluationMessage.isNotEmpty()) {
+                            nextQuestion()
+                        } else {
+                            sendMessages(label)
+                        }
+                    } else {
+                        nextQuestion()
+                    }
                 }
             }
             binding.optionButtonsContainer.addView(chip)
@@ -175,6 +195,8 @@ class ChatbotFragment : Fragment() {
     private fun sendMessages ( prompt : String) {
         lifecycleScope.launch {
 
+            hideBotOptions()
+
             val contentList = mutableListOf<Content>()
             chatHistory.forEach { c -> contentList.add (c.content) }
 
@@ -184,12 +206,16 @@ class ChatbotFragment : Fragment() {
             var functionCall = response.functionCalls.find { it.name == "StartMockInterview" }
             if (functionCall != null) {
                 val question = functionCall.args["question"]!!.jsonPrimitive.content
+                val interviewLength = functionCall.args["length"]?.jsonPrimitive?.doubleOrNull ?: 20
+
+//                main.presageFragment.updateMeasurementDuration(interviewLength as Double)
                 viewModel.updateQuestion(question)
                 main.switchFragment(main.preinterviewFragment)
                 return@launch
             }
             functionCall = response.functionCalls.find { it.name == "StartPostInterviewFeedback" }
             if (functionCall != null) {
+                evaluationMessage = "Consider the previous chat history. Provide answers to questions asked. Then ask what they want to cover next"
                 setupFinalQuestions()
                 setupSendButton()
                 nextQuestion()
@@ -209,18 +235,20 @@ class ChatbotFragment : Fragment() {
         questions.clear()
         val questionList = listOf(
             "Enter a job description or select a predefined role",
+            "Tell me about yourself: What are your interests and career goals?",
             "What are your strengths",
             "... and your weaknesses?",
             "Whats your experience with online interviews?",
-            "What would you like to practice today?"
+            "Would you like to focus on a specific set of skills?"
         )
 
         val optionsList = listOf(
-            listOf("Software Engineer", "Data Scientist", "Product Manager"),
-            listOf("Communication", "Problem-solving", "Teamwork"),
-            listOf("Communication", "Problem-solving", "Teamwork"),
+            listOf("Software Engineer", "Data Scientist", "Product Manager", "Retail"),
+            listOf("Skip"),
+            listOf("Communication", "Problem-solving", "Teamwork", "Leadership", "Adaptability", "Creativity"),
+            listOf("Communication", "Problem-solving", "Teamwork", "Leadership", "Adaptability", "Creativity"),
             listOf("Very experienced", "Some experience", "New to it"),
-            listOf("Behavioral questions", "Technical questions", "Both")
+            listOf("Behavioral questions", "Technical questions", "Confidence")
         )
         questionList.forEach { q ->
             questions += ChatMessage(

@@ -17,7 +17,7 @@
             android:id="@+id/intro_title"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Welcome to Presage"
+            android:text="Presage camera tool"
             android:textAppearance="@style/TextAppearance.AppCompat.Large"
             android:layout_marginBottom="16dp"/>
 
@@ -25,9 +25,10 @@
             android:id="@+id/intro_bullets"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="• The next page will record your response to an interview question\n• When you have read the question, press 'CHECKUP' to start"
-            android:textAppearance="@style/TextAppearance.AppCompat.Medium"
-            android:layout_marginBottom="24dp"/>
+            android:layout_marginBottom="24dp"
+            android:padding="40dp"
+            android:text="Intsructions"
+            android:textAppearance="@style/TextAppearance.AppCompat.Medium" />
 
         <Button
             android:id="@+id/btn_continue"

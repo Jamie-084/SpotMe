@@ -23,7 +23,7 @@
                 android:id="@+id/text_question"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="Current question ..."
+                android:text="Current question: None (ask chatbot)"
                 android:textAlignment="center"
                 android:textAppearance="@style/TextAppearance.AppCompat.Large" />
 
@@ -63,7 +63,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
                 android:orientation="vertical"
-                android:visibility="visible">
+                android:visibility="invisible">
 
                 <LinearLayout
                     android:layout_width="match_parent"
@@ -82,13 +82,22 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="Record speech" />
+
                 </LinearLayout>
+
+                <Space
+                    android:layout_width="match_parent"
+                    android:layout_height="37dp" />
 
                 <TextView
                     android:id="@+id/text_speech"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="Speech text ..." />
+                    android:text="Speech text: Empty" />
+
+                <Space
+                    android:layout_width="match_parent"
+                    android:layout_height="37dp" />
 
                 <LinearLayout
                     android:id="@+id/button_container"

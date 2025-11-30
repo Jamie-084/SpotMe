@@ -35,6 +35,13 @@ class PreinterviewFragment : Fragment() {
         val continueBtn = binding.btnContinue
         main = requireActivity() as MainActivity
 
+        binding.introBullets.text = """
+            • The next page will record your response to an interview question
+            • When you have read the question, press 'CHECKUP' to start
+            • You will have 20 seconds to answer the question
+            • Make sure you memorise the question before starting
+        """.trimIndent()
+
 
         continueBtn.setOnClickListener {
             main.switchFragment(main.presageFragment)

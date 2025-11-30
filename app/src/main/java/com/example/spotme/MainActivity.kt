@@ -20,8 +20,8 @@ class MainActivity : AppCompatActivity() {
     val chatbotFragment = ChatbotFragment()
     var preinterviewFragment = PreinterviewFragment()
 
-    var activeFragment: Fragment = homeFragment
-    var previousFragment: Fragment = homeFragment
+    var activeFragment: Fragment = presageFragment
+    var previousFragment: Fragment = presageFragment
 
 
 
@@ -43,7 +43,7 @@ class MainActivity : AppCompatActivity() {
 
         }.commit()
 
-        switchFragment(chatbotFragment)
+        switchFragment(homeFragment)
 //        switchFragment(presageFragment)
 
         val chatbot_btn = findViewById<android.widget.Button>(R.id.button1)
@@ -53,6 +53,11 @@ class MainActivity : AppCompatActivity() {
         val presage_btn = findViewById<android.widget.Button>(R.id.button2)
         presage_btn.setOnClickListener {
             switchFragment(presageFragment)
+        }
+
+        val home_btn = findViewById<android.widget.Button>(R.id.button3)
+        home_btn.setOnClickListener {
+            switchFragment(homeFragment)
         }
 
     }
