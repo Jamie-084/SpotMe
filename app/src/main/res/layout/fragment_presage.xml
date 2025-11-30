@@ -1,0 +1,120 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    tools:context=".PresageFragment">
+
+
+    <ScrollView
+        android:id="@+id/main_content_container"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="20dp">
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:background="@android:color/white">
+
+
+            <TextView
+                android:id="@+id/text_question"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Current question ..."
+                android:textAlignment="center"
+                android:textAppearance="@style/TextAppearance.AppCompat.Large" />
+
+            <Space
+                android:layout_width="match_parent"
+                android:layout_height="37dp" />
+
+            <com.presagetech.smartspectra.SmartSpectraView
+                android:id="@+id/smart_spectra_view"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content">
+
+            </com.presagetech.smartspectra.SmartSpectraView>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:gravity="center"
+                android:orientation="horizontal">
+
+                <Button
+                    android:id="@+id/submit_btn"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Data to chat" />
+
+                <Button
+                    android:id="@+id/btn_hide"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Toggle graphs" />
+
+            </LinearLayout>
+
+            <LinearLayout
+                android:id="@+id/layout_other"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:orientation="vertical"
+                android:visibility="visible">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:gravity="center"
+                    android:orientation="horizontal">
+
+                    <Button
+                        android:id="@+id/save_btn"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Data to file" />
+
+                    <Button
+                        android:id="@+id/btn_speech"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Record speech" />
+                </LinearLayout>
+
+                <TextView
+                    android:id="@+id/text_speech"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Speech text ..." />
+
+                <LinearLayout
+                    android:id="@+id/button_container"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:background="@android:color/white"
+                    android:orientation="vertical"></LinearLayout>
+
+                <LinearLayout
+                    android:id="@+id/chart_container"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:background="@android:color/white"
+                    android:orientation="vertical"></LinearLayout>
+
+                <com.github.mikephil.charting.charts.ScatterChart
+                    android:id="@+id/mesh_container"
+                    android:layout_width="400dp"
+                    android:layout_height="400dp"
+                    android:layout_gravity="center"
+                    android:visibility="gone">
+
+                </com.github.mikephil.charting.charts.ScatterChart>
+            </LinearLayout>
+
+        </LinearLayout>
+    </ScrollView>
+
+</FrameLayout>
