@@ -17,14 +17,13 @@ import com.google.firebase.ai.Chat
 import com.google.firebase.ai.GenerativeModel
 import com.google.firebase.ai.ai
 import com.google.firebase.ai.type.Content
-import com.google.firebase.ai.type.FunctionCallPart
 import com.google.firebase.ai.type.FunctionDeclaration
 import com.google.firebase.ai.type.GenerativeBackend
-import com.google.firebase.ai.type.PublicPreviewAPI
 import com.google.firebase.ai.type.Schema
 import com.google.firebase.ai.type.Tool
 import com.google.firebase.ai.type.content
 import kotlinx.coroutines.launch
+import kotlinx.serialization.json.jsonPrimitive
 
 
 class ChatbotFragment : Fragment() {
@@ -44,25 +43,32 @@ class ChatbotFragment : Fragment() {
     private lateinit var adapter: ChatbotAdapter
     private val chatHistory = mutableListOf<ChatMessage>()
     private val questions = mutableListOf<ChatMessage>()
+    private var evaluationMessage = "Provide a small summary of what has been mentioned so far, ask me if ready for interview"
+
     val instructionText: Content? = content { """
-        You are an assistant that helps user prepare for online job interviews.
-        Analyse the current chat history and provide relevant and helpful responses.
+        You are an assistant that helps users prepare for online job interviews.
+        Provide summaries of current chat history when requested.
         Use a friendly and professional tone.
-        Responses should use simple text formatting, avoid markdown.
-        If user seems ready for interview, call the StartMockInterview tool.
+        Responses should use simple text formatting.
     """.trimIndent() }
     val toolDeclarations: List<FunctionDeclaration>
     = listOf(
         FunctionDeclaration(
             name = "StartMockInterview",
             description = "Starts a mock interview session.",
+            parameters = mapOf("question" to Schema.string("A single interview question to ask the user."))
+        ),
+        FunctionDeclaration(
+            name = "SendMessage",
+            description = "Responds to the user message based on chat history.",
+            parameters = mapOf("response" to Schema.string("Response message to send to the user."))
+        ),
+        FunctionDeclaration(
+            name = "StartPostInterviewFeedback",
+            description = "Starts the post-interview feedback session.",
             parameters = mapOf()
         )
     )
-
-    //    val interviewTool = com.google.ai.client.generativeai.common.client.Tool(toolDeclarations)
-
-
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?
@@ -83,29 +89,13 @@ class ChatbotFragment : Fragment() {
         main = requireActivity() as MainActivity
 
         viewModel.metricsDataLD.observe(viewLifecycleOwner) { metrics ->
-
             val pulses = viewModel.pulsesLD.value
-            if (pulses.isNullOrEmpty() || pulses[0].value == 0) return@observe
-
-            messageToScreenAndHistory(ChatMessage(text = "New metrics data received.", isUser = false))
-            messageToScreenAndHistory(ChatMessage( viewModel.getAverages(20), isUser = false ))
-//            chatHistory.add( ChatMessage( viewModel.getAverages(), isUser = false ) )
-//            sendMessages( "Based on my health metrics during the mock interview, how do you think I did?" )
-
-//            val chartContainer = LinearLayout(requireContext())
-//            PresageGraphs.handleMetricsBuffer(metrics, chartContainer, requireContext())
-//
-//            val views = (0 until chartContainer.childCount).map { chartContainer.getChildAt(it) }
-//            for (graphView in views) {
-//                val params = ViewGroup.LayoutParams(
-//                    ViewGroup.LayoutParams.MATCH_PARENT,
-//                    400
-//                )
-//                graphView.layoutParams = params
-//                (graphView.parent as? ViewGroup)?.removeView(graphView)
-//                adapter.addGraph(graphView)
-//            }
-
+            if (pulses.isNullOrEmpty() || pulses[0] == 0) return@observe
+            messageToScreenAndHistory(ChatMessage( text = "Metric data: \n" + viewModel.getAverages(20), isUser = true ))
+            messageToScreenAndHistory(ChatMessage(text = "Interview speech: \n" + viewModel.speechTextLD.value, isUser = true))
+//            evaluationMessage = "Consider the previous chat history and ask me what I would like to do next"
+            sendMessages( "Give a short summary on how I did, based off my metric data and interview chat. " +
+                    "Ask if I want to start the post interview feedback session" )
         }
 
         model = Firebase.ai(backend = GenerativeBackend.googleAI())
@@ -115,17 +105,23 @@ class ChatbotFragment : Fragment() {
                 tools = listOf(Tool.functionDeclarations(toolDeclarations))
             )
 
-        setupQuestions()
+        messageToScreenAndHistory(ChatMessage(text = "Hello! I'm your interview preparation assistant. Let's get started!", isUser = false))
+        setupInitialQuestions()
         setupSendButton()
         nextQuestion()
     }
 
     private fun nextQuestion() : Boolean {
         if (questions.isEmpty()) {
+            if (evaluationMessage.isNotEmpty()) {
+                adapter.addMessage(ChatMessage(text = evaluationMessage, isUser = true)) /// remove later
+                sendMessages(evaluationMessage)
+                evaluationMessage = ""
+                return true
+            }
             return false
         }
-        val question = questions[0]
-        questions.removeAt(0)
+        val question = questions.removeAt(0)
         messageToScreenAndHistory(question)
         if (!question.options.isNullOrEmpty()) { showBotOptions(question.options) }
         return true
@@ -136,11 +132,18 @@ class ChatbotFragment : Fragment() {
             val textInTextbox = binding.editMessage.text.toString().trim()
             if (textInTextbox.isEmpty()) return@setOnClickListener
 
-            messageToScreenAndHistory(ChatMessage(text = textInTextbox, isUser = true))
+            val userMessage = ChatMessage(text = textInTextbox, isUser = true)
+            messageToScreenAndHistory(userMessage)
             binding.editMessage.setText("")
 
-            if (!nextQuestion()){
-                sendMessages("Evaluate current chat history, provide a small summary, ask me if ready for interview")
+            if (questions.isEmpty()) {
+                if (evaluationMessage.isNotEmpty()) {
+                    nextQuestion()
+                } else {
+                    sendMessages(textInTextbox)
+                }
+            } else {
+                nextQuestion()
             }
         }
     }
@@ -167,33 +170,7 @@ class ChatbotFragment : Fragment() {
 //        binding.buttonSend.isEnabled = false
     }
 
-    private fun setupQuestions() {
-        val questionList = listOf(
-            "Enter a job description to get started.",
-            "What are your strengths",
-            "... and your weaknesses?",
-            "Whats your experience with online interviews?",
-            "What would you like to practice today?",
-            "Last question: Any thing else?"
-        )
 
-        val optionsList = listOf(
-            listOf("Software Engineer", "Data Scientist", "Product Manager"),
-            listOf("Communication", "Problem-solving", "Teamwork"),
-            listOf("Very experienced", "Some experience", "New to it"),
-            listOf("Behavioral questions", "Technical questions", "Both"),
-            listOf("No, I'm ready", "Yes, tell me more")
-        )
-
-
-        questionList.forEach { q ->
-            questions += ChatMessage(
-                text = q,
-                isUser = false,
-                options = optionsList.getOrNull(questions.size)
-            )
-        }
-    }
 
     private fun sendMessages ( prompt : String) {
         lifecycleScope.launch {
@@ -204,19 +181,75 @@ class ChatbotFragment : Fragment() {
             chat = model.startChat( history = contentList as List<Content> )
 
             val response = chat.sendMessage(prompt)
-            val functionCall: FunctionCallPart? = response.functionCalls.firstOrNull()
+            var functionCall = response.functionCalls.find { it.name == "StartMockInterview" }
             if (functionCall != null) {
-                val functionName = functionCall.name
-
-                if (functionName == "StartMockInterview") {
-                   main.switchFragment(main.presageFragment)
-                } else {
-                    println("Unknown function requested: $functionName")
-                }
-
-            } else {
-                messageToScreenAndHistory(ChatMessage(text = response.text ?: "No response", isUser = false))
+                val question = functionCall.args["question"]!!.jsonPrimitive.content
+                viewModel.updateQuestion(question)
+                main.switchFragment(main.preinterviewFragment)
+                return@launch
             }
+            functionCall = response.functionCalls.find { it.name == "StartPostInterviewFeedback" }
+            if (functionCall != null) {
+                setupFinalQuestions()
+                setupSendButton()
+                nextQuestion()
+                return@launch
+            }
+            functionCall = response.functionCalls.find { it.name == "SendMessage" }
+            if (functionCall != null) {
+                val responseText = functionCall.args["response"]!!.jsonPrimitive.content
+                messageToScreenAndHistory(ChatMessage(text = responseText, isUser = false))
+                return@launch
+            }
+            messageToScreenAndHistory(ChatMessage(text = response.text ?: "No response", isUser = false))
+        }
+    }
+
+    private fun setupInitialQuestions() {
+        questions.clear()
+        val questionList = listOf(
+            "Enter a job description or select a predefined role",
+            "What are your strengths",
+            "... and your weaknesses?",
+            "Whats your experience with online interviews?",
+            "What would you like to practice today?"
+        )
+
+        val optionsList = listOf(
+            listOf("Software Engineer", "Data Scientist", "Product Manager"),
+            listOf("Communication", "Problem-solving", "Teamwork"),
+            listOf("Communication", "Problem-solving", "Teamwork"),
+            listOf("Very experienced", "Some experience", "New to it"),
+            listOf("Behavioral questions", "Technical questions", "Both")
+        )
+        questionList.forEach { q ->
+            questions += ChatMessage(
+                text = q,
+                isUser = false,
+                options = optionsList.getOrNull(questions.size)
+            )
+        }
+    }
+
+    private fun setupFinalQuestions() {
+        questions.clear()
+        val questionList = listOf(
+            "How do you feel about your interview readiness now?",
+            "What areas would you like to improve further?",
+            "Would you like tips on handling difficult questions?"
+        )
+
+        val optionsList = listOf(
+            listOf("Very confident", "Somewhat ready", "Need more practice"),
+            listOf("Technical skills", "Behavioral skills", "Confidence"),
+            listOf("Yes, please", "No, thank you")
+        )
+        questionList.forEach { q ->
+            questions += ChatMessage(
+                text = q,
+                isUser = false,
+                options = optionsList.getOrNull(questions.size)
+            )
         }
     }
 
@@ -253,5 +286,22 @@ class ChatbotFragment : Fragment() {
 //            hideBotOptions()
 //        }
 //    }
+
+    //            chatHistory.add( ChatMessage( viewModel.getAverages(), isUser = false ) )
+//            sendMessages( "Based on my health metrics during the mock interview, how do you think I did?" )
+
+//            val chartContainer = LinearLayout(requireContext())
+//            PresageGraphs.handleMetricsBuffer(metrics, chartContainer, requireContext())
+//
+//            val views = (0 until chartContainer.childCount).map { chartContainer.getChildAt(it) }
+//            for (graphView in views) {
+//                val params = ViewGroup.LayoutParams(
+//                    ViewGroup.LayoutParams.MATCH_PARENT,
+//                    400
+//                )
+//                graphView.layoutParams = params
+//                (graphView.parent as? ViewGroup)?.removeView(graphView)
+//                adapter.addGraph(graphView)
+//            }
 
 }

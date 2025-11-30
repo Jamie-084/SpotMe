@@ -7,6 +7,12 @@ import com.presage.physiology.proto.MetricsProto
 
 class PresageViewModel : ViewModel() {
 
+    private val _questionLD = MutableLiveData<String>()
+    val questionLD: LiveData<String> = _questionLD
+
+    private val _speechTextLD = MutableLiveData<String>()
+    val speechTextLD: LiveData<String> = _speechTextLD
+
     private val _pulsesLD = MutableLiveData<List<Int>>()
     val pulsesLD: LiveData<List<Int>> = _pulsesLD
 
@@ -25,6 +31,16 @@ class PresageViewModel : ViewModel() {
     private val _metricsDataLD = MutableLiveData<MetricsProto.MetricsBuffer>()
     val metricsDataLD: LiveData<MetricsProto.MetricsBuffer> = _metricsDataLD
 
+    init {
+        _speechTextLD.value = """
+            I’m drawn to this company because it has a strong reputation for meaningful work, 
+            a clear commitment to continuous improvement, and a culture that supports growth. 
+            I’m motivated by environments where I can contribute to impactful projects, 
+            learn from talented people, and bring my own strengths to a team that values innovation and quality. 
+            I see this as a place where I can make a real contribution while developing professionally over the long term.
+        """.trimIndent()
+    }
+
     fun updateMetrics(metricsBuffer: MetricsProto.MetricsBuffer) {
         _metricsDataLD.value = metricsBuffer
     }
@@ -33,12 +49,14 @@ class PresageViewModel : ViewModel() {
         pulses: List<Int>,
         breathings: List<Int>,
         bloodPressures: List<Int>,
-        faceBlinks: List<Int>
+        faceBlinks: List<Int>,
+        talkings: List<Int>
     ) {
         _pulsesLD.value = pulses
         _breathingsLD.value = breathings
         _bloodPressuresLD.value = bloodPressures
         _faceBlinksLD.value = faceBlinks
+        _talkingLD.value = talkings
     }
 
     fun getAverages(time : Int ): String {
@@ -63,6 +81,14 @@ class PresageViewModel : ViewModel() {
             Talking Average: ${talkingAvg()} seconds per minute
         """.trimIndent()
     }
+
+    fun updateQuestion(question: String) {
+        _questionLD.value = question
+    }
+    fun updateSpeechText(speechText: String) {
+        _speechTextLD.value = speechText
+    }
+
 //
 //    class Pulse(
 //        val timestamp: Long,

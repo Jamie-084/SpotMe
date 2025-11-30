@@ -18,10 +18,10 @@ class MainActivity : AppCompatActivity() {
     val homeFragment = HomeFragment()
     val presageFragment = PresageFragment()
     val chatbotFragment = ChatbotFragment()
+    var preinterviewFragment = PreinterviewFragment()
 
     var activeFragment: Fragment = homeFragment
     var previousFragment: Fragment = homeFragment
-//    var previousLayout: Int = R.id.homeFragment_ID
 
 
 
@@ -39,6 +39,7 @@ class MainActivity : AppCompatActivity() {
             add(R.id.frame_fragment_holder, presageFragment, "Presage").hide(presageFragment)
             add(R.id.frame_fragment_holder, chatbotFragment, "Chatbot").hide(chatbotFragment)
             add(R.id.frame_fragment_holder, homeFragment, "Home").hide(homeFragment)
+            add(R.id.frame_fragment_holder, preinterviewFragment, "Preinterview").hide(preinterviewFragment)
 
         }.commit()
 

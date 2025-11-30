@@ -53,6 +53,8 @@ dependencies {
     implementation("com.google.firebase:firebase-analytics")
     implementation("com.google.firebase:firebase-ai")
     implementation("com.github.PhilJay:MPAndroidChart:v3.0.3")
+    implementation("com.google.code.gson:gson:2.10.1")
+    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.0")
 
     implementation(libs.androidx.camera.core)
     implementation(libs.androidx.legacy.support.v4)
